@@ -26,7 +26,9 @@ Designed for IT Support and Network Engineers who need a lightweight, portable, 
 
 | Dashboard Monitor | Latency Chart | Telegram Alert |
 | :---: | :---: | :---: |
-| ![Dashboard](https://via.placeholder.com/400x200?text=Dashboard+Screenshot) | ![Chart](https://via.placeholder.com/400x200?text=Chart+Screenshot) | ![Telegram](https://via.placeholder.com/400x200?text=Telegram+Alert) |
+| ![Dashboard](<img width="1919" height="869" alt="Screenshot 2026-01-15 171328" src="https://github.com/user-attachments/assets/8d11e3fb-7850-4686-b7ef-7227577c3bd2" />
+) | ![Chart](<img width="1918" height="869" alt="Screenshot 2026-01-15 171915" src="https://github.com/user-attachments/assets/5aec8b8a-711a-45d7-acdd-0e05d98636f5" />
+) | ![Telegram](<img width="1386" height="872" alt="Screenshot 2026-01-15 171706" src="https://github.com/user-attachments/assets/d16e5194-4bcf-4088-a34d-0e2cb2183476" />) |
 
 ## 🛠️ Tech Stack
 
