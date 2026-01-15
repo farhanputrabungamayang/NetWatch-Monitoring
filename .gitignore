@@ -1,0 +1,16 @@
+# Abaikan folder sampah Python
+__pycache__/
+*.pyc
+
+# Abaikan Database lokal (biar user lain start fresh)
+*.db
+netwatch.db
+
+# Abaikan folder hasil compile EXE (PyInstaller)
+build/
+dist/
+*.spec
+
+# Abaikan Environment (kalau pakai venv)
+venv/
+env/

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NetWatch Ultimate</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <style>
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; }
+        .header-bar { border-bottom: 1px solid #334155; padding: 20px 0; margin-bottom: 30px; }
+        
+        .card-monitor { background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; transition: all 0.3s; position: relative; cursor: pointer; }
+        .card-monitor:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); border-color: #3b82f6; }
+        
+        .card-speed { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: none; color: white; border-radius: 12px; }
+        
+        .status-dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .bg-success { background-color: #10b981 !important; box-shadow: 0 0 10px #10b981; }
+        .bg-danger { background-color: #ef4444 !important; animation: pulseRed 0.5s infinite; }
+        .bg-warning { background-color: #f59e0b !important; }
+        .bg-secondary { background-color: #64748b !important; }
+        @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        .btn-del { position: absolute; top: 10px; right: 10px; color: #475569; z-index: 10; font-size: 1.2rem; }
+        .btn-del:hover { color: #ef4444; }
+        .btn-mute { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .btn-mute.active { background: #ef4444; border-color: #ef4444; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center header-bar">
+        <div>
+            <h3 class="fw-bold mb-0"><i class="bi bi-activity text-success"></i> NetWatch <span class="text-primary">ULTIMATE</span></h3>
+            <small class="text-muted">Logged in as: {{ current_user.username }}</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-mute rounded-pill px-3" onclick="toggleMute()" id="muteBtn"><i class="bi bi-volume-up-fill"></i> ON</button>
+            <a href="/history" class="btn btn-sm btn-outline-warning rounded-pill px-3"><i class="bi bi-journal-text"></i> Logs</a>
+            <button class="btn btn-sm btn-primary rounded-pill px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#addModal"><i class="bi bi-plus-lg"></i> Add</button>
+            <a href="/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3"><i class="bi bi-box-arrow-right"></i></a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-speed shadow p-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="bi bi-speedometer2 fs-1"></i>
+                        <div><h6 class="mb-0 fw-bold">INTERNET SPEED</h6><small class="opacity-50">Auto-Update 15m</small></div>
+                    </div>
+                    <div class="d-flex gap-4 text-center">
+                        <div><h3 class="fw-bold mb-0" id="speedDL">{{ speed.dl }}</h3><small>DL (Mbps)</small></div>
+                        <div><h3 class="fw-bold mb-0" id="speedUL">{{ speed.ul }}</h3><small>UL (Mbps)</small></div>
+                        <div><h3 class="fw-bold mb-0" id="speedPing">{{ speed.ping }}</h3><small>Ping (ms)</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4" id="monitorGrid">
+        {% for t in targets %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card card-monitor h-100 p-3" id="card_{{ t.id }}" onclick="showChart('{{ t.id }}', '{{ t.name }}')">
+                <a href="/delete_device/{{ t.id }}" class="btn-del" onclick="event.stopPropagation(); return confirm('Hapus?')"><i class="bi bi-x"></i></a>
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <i class="bi {{ t.icon }} fs-1 text-secondary" id="icon_{{ t.id }}"></i>
+                    <span class="badge bg-secondary rounded-pill" id="badge_{{ t.id }}">WAITING</span>
+                </div>
+                <h5 class="fw-bold mb-1 text-white">{{ t.name }}</h5>
+                <small class="text-muted d-block mb-3 font-monospace">{{ t.ip }} {% if t.port > 0 %}:{{ t.port }}{% endif %}</small>
+                <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top border-secondary">
+                    <div><span class="status-dot bg-secondary" id="dot_{{ t.id }}"></span><span class="fw-bold" id="status_{{ t.id }}">--</span></div>
+                    <span class="small opacity-75" id="lat_{{ t.id }}">--</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="modal fade" id="chartModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content bg-dark border-secondary text-white">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold" id="chartTitle">Latency History</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div style="height: 300px;"><canvas id="pingChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content bg-dark border-secondary text-white" action="/add_device" method="POST">
+            <div class="modal-header border-secondary"><h5 class="modal-title fw-bold">Tambah Device</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="mb-3"><label>Nama</label><input type="text" name="name" class="form-control bg-secondary text-white border-0" required></div>
+                <div class="mb-3"><label>IP</label><input type="text" name="ip" class="form-control bg-secondary text-white border-0" required></div>
+                <div class="mb-3"><label>Port (0=Ping)</label><input type="number" name="port" class="form-control bg-secondary text-white border-0" value="0"></div>
+                <div class="mb-3"><label>Icon</label><select name="icon" class="form-select bg-secondary text-white border-0"><option value="bi-hdd-network">Server</option><option value="bi-router">Router</option><option value="bi-globe">Internet</option><option value="bi-camera-video">CCTV</option></select></div>
+            </div>
+            <div class="modal-footer border-secondary"><button type="submit" class="btn btn-success w-100">Simpan</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var socket = io();
+    const alarmSound = new Audio('https://actions.google.com/sounds/v1/alarms/spaceship_alarm.ogg'); alarmSound.loop = true;
+    let isMuted = false; let isPlaying = false;
+    let myChart = null; // Variable Chart
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('muteBtn');
+        if (isMuted) { btn.classList.add('active'); btn.innerHTML = 'MUTED'; if(isPlaying) alarmSound.pause(); } 
+        else { btn.classList.remove('active'); btn.innerHTML = 'ON'; }
+    }
+
+    // FUNGSI BUKA CHART
+    function showChart(id, name) {
+        document.getElementById('chartTitle').innerText = 'Latency: ' + name;
+        var myModal = new bootstrap.Modal(document.getElementById('chartModal'));
+        myModal.show();
+
+        // Ambil Data dari API
+        fetch('/api/chart/' + id).then(r => r.json()).then(data => {
+            const ctx = document.getElementById('pingChart');
+            if (myChart) myChart.destroy(); // Hapus chart lama
+            
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Latency (ms)',
+                        data: data.values,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, grid: { color: '#334155' } }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        });
+    }
+
+    socket.on('update_speed', d => {
+        document.getElementById('speedDL').innerText = d.dl;
+        document.getElementById('speedUL').innerText = d.ul;
+        document.getElementById('speedPing').innerText = d.ping;
+    });
+
+    socket.on('update_monitor', d => {
+        let anyDown = false;
+        d.forEach(i => {
+            var el = document.getElementById('card_' + i.id);
+            if(el){
+                document.getElementById('dot_'+i.id).className = 'status-dot bg-'+i.color;
+                document.getElementById('badge_'+i.id).className = 'badge rounded-pill bg-'+i.color;
+                document.getElementById('icon_'+i.id).className = 'bi '+document.getElementById('icon_'+i.id).classList[1]+' fs-1 text-'+i.color;
+                document.getElementById('status_'+i.id).innerText = i.status;
+                document.getElementById('badge_'+i.id).innerText = i.status;
+                document.getElementById('lat_'+i.id).innerText = i.latency;
+                if(i.status=='DOWN' || i.status=='ERR') anyDown = true;
+            }
+        });
+        if(anyDown && !isMuted && !isPlaying) { alarmSound.play().catch(()=>{}); isPlaying=true; }
+        else if(!anyDown && isPlaying) { alarmSound.pause(); isPlaying=false; }
+    });
+</script>
+</body>
+</html>

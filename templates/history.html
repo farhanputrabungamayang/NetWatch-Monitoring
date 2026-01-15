@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Downtime History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; padding: 20px; }
+        .table-dark { background-color: #1e293b; color: #e2e8f0; }
+        .table-dark th { background-color: #334155; border-color: #475569; }
+        .table-dark td { border-color: #334155; }
+        .badge-down { background-color: #ef4444; color: white; }
+        .badge-up { background-color: #10b981; color: white; }
+        .btn-back { background-color: #334155; color: white; border: 1px solid #475569; }
+        .btn-back:hover { background-color: #475569; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold"><i class="bi bi-clock-history text-warning"></i> Event Logs</h3>
+            <a href="/" class="btn btn-back rounded-pill px-4"><i class="bi bi-arrow-left"></i> Dashboard</a>
+        </div>
+
+        <div class="card bg-dark border-secondary">
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>Perangkat</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                            <th>Pesan Log</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td class="text-secondary">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td class="fw-bold">{{ log.device_name }}</td>
+                            <td class="font-monospace text-info">{{ log.ip_address }}</td>
+                            <td>
+                                {% if log.status == 'DOWN' %}
+                                    <span class="badge badge-down">DOWN</span>
+                                {% else %}
+                                    <span class="badge badge-up">UP</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.message }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">Belum ada kejadian (Semua aman!)</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="text-muted mt-3 small">* Menampilkan 50 kejadian terakhir.</p>
+    </div>
+</body>
+</html>
